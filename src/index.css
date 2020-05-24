@@ -233,6 +233,13 @@ div#catdiv {
 }
 
 .card {
+  background-color: #017a07;
   width:108px;
   height:175px;
+}
+
+.resultpanel {
+  overflow:scroll;
+  overflow-x:hidden;
+  height:170px;
 }

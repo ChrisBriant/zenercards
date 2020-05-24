@@ -61,6 +61,9 @@ class Main extends Component {
                 </Row>
               </Col>
             </Row>
+            <Row>
+              <Col><p>Icons by <a href="https://fontaweson.com">Font Awesome</a></p></Col>
+            </Row>
             <br/>
           </Container>
         </HashRouter>
