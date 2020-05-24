@@ -5,6 +5,7 @@ import {
   HashRouter
 } from "react-router-dom";
 import Home from "./components/Home.js";
+import ZenerMain from "./components/zenermain.js";
 
 import './index.css';
 
@@ -55,6 +56,7 @@ class Main extends Component {
                 <Row>
                   <Col>
                     <Route exact path="/" render={props => (<Home {...props} setTest={this.setTest}/>)}/>
+                    <Route exact path="/playcomputer" render={props => (<ZenerMain {...props} setTest={this.setTest}/>)}/>
                   </Col>
                 </Row>
               </Col>

@@ -225,3 +225,14 @@ div#catdiv {
 .grouprow {
   padding-bottom: 1px;
 }
+
+.zenerpanel {
+  background-color: #017a07;
+  width: 800px;
+  height:600px;
+}
+
+.card {
+  width:108px;
+  height:175px;
+}

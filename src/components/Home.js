@@ -11,6 +11,7 @@ class Home extends Component {
     super(props);
     this.state = {
     }
+    this.handlePlayComputer = this.handlePlayComputer.bind(this);
     //this.handleRegister = this.handleRegister.bind(this);
   }
 
@@ -20,6 +21,10 @@ class Home extends Component {
 
   handleRegister() {
     this.props.history.push("/register");
+  }
+
+  handlePlayComputer() {
+    this.props.history.push("/playcomputer");
   }
 
   render() {
@@ -34,6 +39,8 @@ class Home extends Component {
         <Row>
           <Col>
             <p>Home page goes here</p>
+            <Button onClick={this.handlePlayComputer}>Play against computer</Button>
+            <Button>Play against human</Button>
             <br/>
           </Col>
         </Row>
