@@ -54,7 +54,20 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function () {
     console.log('user disconnected: ', socket.id);
     if(players[socket.id].pairId > 0) {
-      delete pairs[players[socket.id].pairId];
+      if(players[socket.id].pairId in pairs) {
+        var pair = pairs[players[socket.id].pairId];
+        if(pair.length > 1) {
+          if(pair[0].id == socket.id) {
+            var otherId = pair[1].id;
+          } else {
+            var otherId = pair[0].id;
+          }
+        }
+        console.log("Other");
+        console.log(otherId);
+        io.to(otherId).emit('finished_game',players[socket.id],true);
+        delete pairs[players[socket.id].pairId];
+      }
       delete players[socket.id];
     } else {
       delete players[socket.id];
@@ -80,17 +93,37 @@ io.on('connection', function (socket) {
   socket.on('guess_made', function (guess) {
     var cardId = players[socket.id].cards[players[socket.id].cards.length-1];
     //Randomly select the card and signal when ready
-    if(guess == players[socket.id].cards[-1]) {
+    if(guess == cardId) {
       result = true;
     } else {
       result = false;
     }
     players[socket.id].results.push(result);
+    console.log('guess result');
+    console.log(players[socket.id]);
+    console.log(typeof players[socket.id].cards[-1]);
+    console.log(typeof guess);
     io.to(socket.id).emit('guess_result',cardId);
   });
 
   socket.on('player_has_guessed', function (otherId) {
     io.to(otherId).emit('draw_again');
+  });
+
+  socket.on('turn_change', function (otherId) {
+    console.log('turn change');
+    io.to(otherId).emit('turn_change');
+  });
+
+  socket.on('multiplayer_finished', function (otherId,playerInitiated) {
+    console.log('FINISHED');
+    if(players[otherId].pairId in pairs) {
+      delete pairs[players[otherId].pairId];
+      console.log("pairs");
+      console.log(pairs);
+    }
+    io.to(socket.id).emit('finished_game',players[otherId],playerInitiated);
+    io.to(otherId).emit('finished_game',players[socket.id],playerInitiated);
   });
 });
 
