@@ -37,6 +37,8 @@ class ZenerMain extends Component {
       guessMade: false,
       drawReady: true,
       otherPlayerFound: false,
+      playerPickedCard: false,
+      playerPick: false,
       results: []
     }
     this.clickCard = this.clickCard.bind(this);
@@ -47,6 +49,7 @@ class ZenerMain extends Component {
     this.goToHome = this.goToHome.bind(this);
     this.initGame = this.initGame.bind(this);
     this.finish = this.finish.bind(this);
+    this.getCardName = this.getCardName.bind(this);
   }
 
 
@@ -116,7 +119,7 @@ class ZenerMain extends Component {
     });
 
     this.socket.on('player_found', function(otherPlayer,drawReady) {
-      component.setState({drawReady:drawReady, connected:true, otherPlayer:otherPlayer,otherPlayerFound:true});
+      component.setState({playerPick:drawReady, connected:true, otherPlayer:otherPlayer,otherPlayerFound:true});
       console.log('Ready');
       console.log(component.state.drawReady);
       console.log(component.state.connected);
@@ -133,9 +136,9 @@ class ZenerMain extends Component {
     this.socket.on('guess_result', function(cardNo) {
       if(parseInt(cardNo) === parseInt(component.state.selectedCardNo) )
       {
-        var result = { card:component.getCardName(cardNo), result:true } ;
+        var result = { card:component.getCardName(parseInt(cardNo)), result:true } ;
       } else {
-        var result = { card:component.getCardName(cardNo), result:false } ;
+        var result = { card:component.getCardName(parseInt(cardNo)), result:false } ;
       }
       var results = component.state.results;
       results.push(result);
@@ -145,7 +148,17 @@ class ZenerMain extends Component {
         component.setState({isFinished:true, serverCard:component.getCardName(parseInt(cardNo)), results:results})
       } else {
         component.setState({cardDrawn:true, drawReady:true, serverCard:component.getCardName(parseInt(cardNo)), results:results});
+        if(component.props.multiPlayer) {
+          //Tell server the player has guessed now let other player select
+          component.socket.emit('player_has_guessed',component.state.otherPlayer.id);
+        }
       }
+    });
+
+    this.socket.on('draw_again', function() {
+      alert("HERE");
+      //Allow the player to draw another card
+      component.setState({playerPickedCard:false});
     });
   }
 
@@ -153,9 +166,14 @@ class ZenerMain extends Component {
 
   clickCard(e) {
     if(this.state.cardDrawn && !this.state.guessMade) {
+      alert("Here");
       //Place the card in the middle and then request from the server
       this.setState({guessMade:true, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
       this.socket.emit('guess_made',e.target.id);
+    } else if (this.props.multiPlayer && this.state.playerPick && !this.state.playerPickedCard) {
+      //the player who is selecting gets to pick a card
+      this.setState({playerPickedCard:true, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
+      this.socket.emit('card_drawn',e.target.id,this.state.otherPlayer.id);
     }
   }
 
@@ -192,6 +210,22 @@ class ZenerMain extends Component {
 
 
   render() {
+    if(!this.props.multiPlayer) {
+      var selectedCard = <Col>{ !this.state.guessMade ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }</Col>;
+    } else {
+      console.log("MultiPlayer");
+      console.log(this.state.playerPickedCard);
+      console.log(this.state.guessMade);
+      /*
+      if(!this.state.guessMade && !this.state.playerPickedCard){
+        var selectedCard = <Col><img src={placeholder} className="card"/></Col>;
+      } else {
+        console.log("I am a cat");
+        var selectedCard = <Col><img src={this.state.cardSelection} className="card"/></Col>;
+      }*/
+      var selectedCard = <Col>{ !this.state.guessMade && !this.state.playerPickedCard ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }</Col>;
+    }
+
     if(this.state.isStart) {
       return (
         <Container>
@@ -257,7 +291,7 @@ class ZenerMain extends Component {
             <p>App goes here</p>
             <Row>
               <Col>
-                {this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>{this.state.name} Draw Card</Button> : <Button disabled>{this.state.name} Draw Card</Button> }
+                {this.state.connected && this.state.drawReady && !this.props.multiPlayer ? <Button onClick={this.drawCard}>{this.state.name} Draw Card</Button> : <Button disabled>{this.state.name} Draw Card</Button> }
               </Col>
               <Col>
                <Button onClick={this.finish}>Finish</Button>
@@ -274,14 +308,17 @@ class ZenerMain extends Component {
                 </div>
               </Col>
               <Col></Col>
-              <Col><img src={back} onClick={this.clickCard} className="card"/></Col>
+              <Col>
+                { !this.state.multiPlayer ? <img src={back} onClick={this.clickCard} className="card"/> : null}
+              </Col>
             </Row>
             <Row>
               <Col></Col>
+                {selectedCard}
               <Col>
-                { !this.state.guessMade ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }
+                { this.props.multiPlayer && this.state.playerPick ? <p>{ this.state.name } pick a card</p> : null }
+                { this.props.multiPlayer && !this.state.playerPick && this.state.cardDrawn ? <p>{ this.state.name } pick a card</p> : null }
               </Col>
-              <Col></Col>
               <Col>
                 { !this.state.cardDrawn ? <img src={placeholder} className="card"/> : <img src={this.state.serverCard} className="card"/> }
               </Col>

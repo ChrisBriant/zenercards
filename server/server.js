@@ -69,7 +69,16 @@ io.on('connection', function (socket) {
     console.log('card drawn')
   });
 
+  socket.on('card_drawn',function(cardId,otherId) {
+    console.log(socket.id);
+    console.log(otherId);
+    players[otherId].cards.push(cardId);
+    io.to(otherId).emit('card_drawn');
+    console.log('card drawn by player')
+  });
+
   socket.on('guess_made', function (guess) {
+    var cardId = players[socket.id].cards[players[socket.id].cards.length-1];
     //Randomly select the card and signal when ready
     if(guess == players[socket.id].cards[-1]) {
       result = true;
@@ -77,7 +86,11 @@ io.on('connection', function (socket) {
       result = false;
     }
     players[socket.id].results.push(result);
-    io.to(socket.id).emit('guess_result',players[socket.id].cards[players[socket.id].cards.length-1]);
+    io.to(socket.id).emit('guess_result',cardId);
+  });
+
+  socket.on('player_has_guessed', function (otherId) {
+    io.to(otherId).emit('draw_again');
   });
 });
 
