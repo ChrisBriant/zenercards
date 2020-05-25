@@ -243,3 +243,8 @@ div#catdiv {
   overflow-x:hidden;
   height:170px;
 }
+
+.iconsmall {
+  width:20px;
+  height:20px;
+}

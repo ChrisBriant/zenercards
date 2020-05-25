@@ -56,7 +56,8 @@ class Main extends Component {
                 <Row>
                   <Col>
                     <Route exact path="/" render={props => (<Home {...props} setTest={this.setTest}/>)}/>
-                    <Route exact path="/playcomputer" render={props => (<ZenerMain {...props} setTest={this.setTest}/>)}/>
+                    <Route exact path="/playcomputer" render={props => (<ZenerMain {...props} multiPlayer={false}/>)}/>
+                    <Route exact path="/playhuman" render={props => (<ZenerMain {...props}  multiPlayer={true}/>)}/>
                   </Col>
                 </Row>
               </Col>

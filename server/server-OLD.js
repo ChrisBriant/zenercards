@@ -6,8 +6,8 @@ var cors = require('cors');
 var port = process.env.PORT || 8080;
 
 var players = {};
-var pairId = 1;
-var pairs = {};
+var pairId = 0;
+var pairs = [];
 
 var cards = { 1:'circle',2:'square',3:'waves',4:'cross',5:'star'}
 
@@ -28,37 +28,34 @@ io.on('connection', function (socket) {
 
   socket.on('new_player',function (name,multiPlayer) {
     console.log("New Player");
-    players[socket.id] = {id:socket.id,name:name,cards:[],results:[],pairId:0};
+    players[socket.id] = {id:socket.id,name:name,cards:[],results:[]};
     console.log(pairs);
     if(multiPlayer) {
-      if(pairId in pairs) {
-        var otherPlayer = pairs[pairId][0];
-        //Set the pair id
-        players[socket.id].pairId = pairId;
-        pairs[pairId].push(players[socket.id]);
-        pairId++;
-        io.to(socket.id).emit('player_found',otherPlayer,false);
+      if(pairs.length > 0) {
+        if(pairs[pairs.length-1].length > 0) {
+          console.log("HERE");
+          var otherPlayer = pairs[pairs.length-1][0];
+          console.log(otherPlayer);
+          pairs[pairs.length-1].push(players[socket.id]);
+          io.to(socket.id).emit('player_found',otherPlayer,false);
+        } else {
+          pairs.push([players[socket.id]]);
+        }
       } else {
-        players[socket.id].pairId = pairId;
-        pairs[pairId] = [players[socket.id]];
+        pairs.push([players[socket.id]]);
       }
     }
   });
 
   socket.on('other_player_start', function (otherPlayer) {
     console.log(otherPlayer);
-    io.to(otherPlayer).emit('player_found',players[socket.id],true);
+    io.to(socket.id).emit('player_found',otherPlayer,true);
   });
 
   // when a player disconnects, remove them from our players object
   socket.on('disconnect', function () {
     console.log('user disconnected: ', socket.id);
-    if(players[socket.id].pairId > 0) {
-      delete pairs[players[socket.id].pairId];
-      delete players[socket.id];
-    } else {
-      delete players[socket.id];
-    }
+    delete players[socket.id];
   });
 
   socket.on('draw_card', function (id) {

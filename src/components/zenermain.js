@@ -24,18 +24,29 @@ class ZenerMain extends Component {
 
   constructor(props) {
     super(props);
+    console.log("props");
+    console.log(this.props);
     this.state = {
+      name: "",
       isStart: true,
+      isFinished: false,
       numberOfCards: 1,
+      drawCount: 0,
       connected: false,
       cardDrawn: false,
       guessMade: false,
       drawReady: true,
+      otherPlayerFound: false,
       results: []
     }
     this.clickCard = this.clickCard.bind(this);
     this.drawCard = this.drawCard.bind(this);
     this.handleChangeCardCount = this.handleChangeCardCount.bind(this);
+    this.handleStart = this.handleStart.bind(this);
+    this.handleChangeName = this.handleChangeName.bind(this);
+    this.goToHome = this.goToHome.bind(this);
+    this.initGame = this.initGame.bind(this);
+    this.finish = this.finish.bind(this);
   }
 
 
@@ -56,12 +67,14 @@ class ZenerMain extends Component {
   }
 
   componentDidMount(){
+    /*
     if(!this.state.isStart) {
+
       var component = this;
       this.socket = socketIOClient.connect(ENDPOINT);
 
       this.socket.on('socketID', function() {
-        this.emit('new_player','ME');
+        this.emit('new_player',component.state.name);
         component.setState({connected:true});
       });
 
@@ -78,10 +91,62 @@ class ZenerMain extends Component {
         }
         var results = component.state.results;
         results.push(result);
-        component.setState({cardDrawn:true, drawReady:true, serverCard:component.getCardName(parseInt(cardNo)), results:results});
+        if(component.state.drawCount == component.state.numberOfCards) {
+          //Exit
+          component.socket.disconnect();
+          component.setState({isFinished:true, serverCard:component.getCardName(parseInt(cardNo)), results:results})
+        } else {
+          component.setState({cardDrawn:true, drawReady:true, serverCard:component.getCardName(parseInt(cardNo)), results:results});
+        }
       });
     }
+    */
 
+  }
+
+  initGame() {
+    var component = this;
+    this.socket = socketIOClient.connect(ENDPOINT);
+
+    this.socket.on('socketID', function() {
+      this.emit('new_player',component.state.name,component.props.multiPlayer);
+      if(!component.props.multiPlayer) {
+        component.setState({connected:true});
+      }
+    });
+
+    this.socket.on('player_found', function(otherPlayer,drawReady) {
+      component.setState({drawReady:drawReady, connected:true, otherPlayer:otherPlayer,otherPlayerFound:true});
+      console.log('Ready');
+      console.log(component.state.drawReady);
+      console.log(component.state.connected);
+      if(!drawReady) {
+        //Signal to the server to start the other player
+        this.emit('other_player_start',otherPlayer.id);
+      }
+    });
+
+    this.socket.on('card_drawn', function() {
+      component.setState({cardDrawn:true, serverCard:component.getCardName(0)})
+    });
+
+    this.socket.on('guess_result', function(cardNo) {
+      if(parseInt(cardNo) === parseInt(component.state.selectedCardNo) )
+      {
+        var result = { card:component.getCardName(cardNo), result:true } ;
+      } else {
+        var result = { card:component.getCardName(cardNo), result:false } ;
+      }
+      var results = component.state.results;
+      results.push(result);
+      if(component.state.drawCount == component.state.numberOfCards) {
+        //Exit
+        component.socket.disconnect();
+        component.setState({isFinished:true, serverCard:component.getCardName(parseInt(cardNo)), results:results})
+      } else {
+        component.setState({cardDrawn:true, drawReady:true, serverCard:component.getCardName(parseInt(cardNo)), results:results});
+      }
+    });
   }
 
 
@@ -96,7 +161,9 @@ class ZenerMain extends Component {
 
   drawCard(e) {
     e.preventDefault();
-    this.setState({drawReady:false, guessMade:false});
+    var drawCount = this.state.drawCount;
+    drawCount++;
+    this.setState({drawReady:false, guessMade:false, drawCount: drawCount});
     this.socket.emit('draw_card',this.socket.id);
   }
 
@@ -105,21 +172,83 @@ class ZenerMain extends Component {
     this.setState({numberOfCards:e});
   }
 
+  handleChangeName(e) {
+    this.setState({name:e.target.value});
+  }
+
+  handleStart() {
+    this.setState({isStart:false});
+    this.initGame();
+  }
+
+  finish() {
+    this.socket.disconnect();
+    this.setState({isFinished:true});
+  }
+
+  goToHome() {
+    this.props.history.push('/')
+  }
 
 
   render() {
     if(this.state.isStart) {
       return (
         <Container>
-        <Row>
-          <Col>
-            <label>Select number of guesses</label>
-            <NumericInput min={1} max={100} value={this.state.numberOfCards} className="form-control" onChange={this.handleChangeCardCount}/>
-          </Col>
-        </Row>
-        <Row>
-          <Col><Button onClick={this.handleStart}>START</Button></Col>
-        </Row>
+          <Row>
+            <Col>
+              <label>Enter a nickname:</label>
+            </Col>
+            <Col>
+              <input value={this.state.name} className="form-control" onChange={this.handleChangeName}/>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <label>Select number of guesses</label>
+            </Col>
+            <Col>
+              <NumericInput min={1} max={100} value={this.state.numberOfCards} className="form-control" onChange={this.handleChangeCardCount}/>
+            </Col>
+          </Row>
+          <Row>
+            <Col><Button onClick={this.handleStart}>START</Button></Col>
+          </Row>
+        </Container>
+      );
+    } else if(this.state.isFinished) {
+      return (
+        <Container>
+          <Row>
+            <Col>Results:</Col>
+          </Row>
+          <Row>
+            <Col>{this.state.results.filter(r => r.result).length}  /  { this.state.results.length } </Col>
+          </Row>
+          <Row>
+            <Col>
+              <div className="resultpanel">{ this.state.results.map( (result,idx) => (
+                  <Row key={idx}>
+                    <Col><img src={result.card}></img></Col>
+                    <Col>
+                      { !result.result ? <img src={mistake} className="iconsmall"></img> : <img src={tick} className="iconsmall"></img>  }
+                    </Col>
+                  </Row>
+                ))}
+              </div>
+            </Col>
+          </Row>
+          <Row>
+            <Col><Button onClick={this.goToHome}>Exit</Button></Col>
+          </Row>
+        </Container>
+      );
+    } else if(this.props.multiPlayer && !this.state.otherPlayerFound) {
+      return (
+        <Container>
+          <Row>
+            <Col>Waiting for other player</Col>
+          </Row>
         </Container>
       );
     } else {
@@ -128,9 +257,11 @@ class ZenerMain extends Component {
             <p>App goes here</p>
             <Row>
               <Col>
-                {this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>Draw Card</Button> : <Button disabled>Draw Card</Button> }
+                {this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>{this.state.name} Draw Card</Button> : <Button disabled>{this.state.name} Draw Card</Button> }
               </Col>
-              <Col></Col>
+              <Col>
+               <Button onClick={this.finish}>Finish</Button>
+              </Col>
               <Col>
                 <div className="resultpanel">{ this.state.results.map( (result,idx) => (
                     <Row key={idx}>

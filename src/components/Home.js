@@ -12,7 +12,7 @@ class Home extends Component {
     this.state = {
     }
     this.handlePlayComputer = this.handlePlayComputer.bind(this);
-    //this.handleRegister = this.handleRegister.bind(this);
+    this.handlePlayHuman = this.handlePlayHuman.bind(this);
   }
 
   componentDidMount(){
@@ -25,6 +25,10 @@ class Home extends Component {
 
   handlePlayComputer() {
     this.props.history.push("/playcomputer");
+  }
+
+  handlePlayHuman() {
+    this.props.history.push("/playhuman");
   }
 
   render() {
@@ -40,7 +44,7 @@ class Home extends Component {
           <Col>
             <p>Home page goes here</p>
             <Button onClick={this.handlePlayComputer}>Play against computer</Button>
-            <Button>Play against human</Button>
+            <Button onClick={this.handlePlayHuman}>Play against human</Button>
             <br/>
           </Col>
         </Row>
