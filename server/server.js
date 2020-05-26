@@ -107,7 +107,8 @@ io.on('connection', function (socket) {
   });
 
   socket.on('player_has_guessed', function (otherId) {
-    io.to(otherId).emit('draw_again');
+    var guessResult = players[socket.id].results[players[socket.id].results.length-1];;
+    io.to(otherId).emit('draw_again',guessResult);
   });
 
   socket.on('turn_change', function (otherId) {

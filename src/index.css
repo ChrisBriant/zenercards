@@ -248,3 +248,35 @@ div#catdiv {
   width:20px;
   height:20px;
 }
+
+.wait-anim {
+  background-color: orangered;
+  height: 90px;
+  width: 90px;
+
+  left: 0px;
+  top: 0px;
+
+  position: absolute;
+
+  animation: sampleanimation 1s infinite;
+}
+
+@keyframes sampleanimation {
+  0% {
+    left: 0px;
+    top: 0px;
+  }
+  25% {
+    left: 300px;
+    top: 0px;
+  }
+  50% {
+    left: 300px;
+    top: 150px;
+  }
+  75% {
+    left: 0px;
+    top: 150px;
+  }
+}

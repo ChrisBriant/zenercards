@@ -44,6 +44,7 @@ class ZenerMain extends Component {
       otherPlayerFound: false,
       playerPickedCard: false,
       playerPick: false,
+      cardMessage: "",
       turns: turns,
       results: []
     }
@@ -78,40 +79,6 @@ class ZenerMain extends Component {
   }
 
   componentDidMount(){
-    /*
-    if(!this.state.isStart) {
-
-      var component = this;
-      this.socket = socketIOClient.connect(ENDPOINT);
-
-      this.socket.on('socketID', function() {
-        this.emit('new_player',component.state.name);
-        component.setState({connected:true});
-      });
-
-      this.socket.on('card_drawn', function() {
-        component.setState({cardDrawn:true, serverCard:component.getCardName(0)})
-      });
-
-      this.socket.on('guess_result', function(cardNo) {
-        if(parseInt(cardNo) === parseInt(component.state.selectedCardNo) )
-        {
-          var result = { card:component.getCardName(cardNo), result:true } ;
-        } else {
-          var result = { card:component.getCardName(cardNo), result:false } ;
-        }
-        var results = component.state.results;
-        results.push(result);
-        if(component.state.drawCount == component.state.numberOfCards) {
-          //Exit
-          component.socket.disconnect();
-          component.setState({isFinished:true, serverCard:component.getCardName(parseInt(cardNo)), results:results})
-        } else {
-          component.setState({cardDrawn:true, drawReady:true, serverCard:component.getCardName(parseInt(cardNo)), results:results});
-        }
-      });
-    }
-    */
 
   }
 
@@ -128,9 +95,12 @@ class ZenerMain extends Component {
 
     this.socket.on('player_found', function(otherPlayer,drawReady) {
       component.setState({playerPick:drawReady, connected:true, otherPlayer:otherPlayer,otherPlayerFound:true});
-      console.log('Ready');
-      console.log(component.state.drawReady);
-      console.log(component.state.connected);
+      if(component.state.playerPick) {
+        var cardMessage = "Choose a card, try and transmit that image to " + component.state.otherPlayer.name;
+      } else {
+        var cardMessage = "Please wait for " + component.state.otherPlayer.name + " to select a card";
+      }
+      component.setState({cardMessage:cardMessage});
       if(!drawReady) {
         //Signal to the server to start the other player
         this.emit('other_player_start',otherPlayer.id);
@@ -139,7 +109,8 @@ class ZenerMain extends Component {
 
     this.socket.on('card_drawn', function() {
       if(component.props.multiPlayer) {
-        component.setState({cardDrawn:true, guessMade:false, serverCard:component.getCardName(0)});
+        var cardMessage = component.state.otherPlayer.name + " is transmitting the card shown turned over, select the image which appears in your head";
+        component.setState({cardDrawn:true, cardMessage:cardMessage, guessMade:false, serverCard:component.getCardName(0)});
       } else {
         component.setState({cardDrawn:true, serverCard:component.getCardName(0)});
       }
@@ -172,26 +143,40 @@ class ZenerMain extends Component {
           //var turns = component.state.turns;
           //turns--;
           //Tell the server to change player and change state
-          component.setState({cardDrawn:false,playerPick:true, serverCard:component.getCardName(parseInt(cardNo)), cardSelection:component.getCardName(6), results:results});
+          var cardMessage = "Please pick a card is now " + component.state.otherPlayer.name + "'s turn to receive";
+          component.setState({cardDrawn:false,playerPick:true, cardMessage:cardMessage, serverCard:component.getCardName(parseInt(cardNo)), cardSelection:component.getCardName(6), results:results});
           component.socket.emit('turn_change',component.state.otherPlayer.id);
         }
       } else {
-        component.setState({cardDrawn:true, drawReady:true, drawCount:drawCount, serverCard:component.getCardName(parseInt(cardNo)), results:results});
         if(component.props.multiPlayer) {
           //Tell server the player has guessed now let other player select
+          if(result.result) {
+            var cardMessage = "Correct! Please wait for " + component.state.otherPlayer.name + " to transmit a card.";
+          } else {
+            var cardMessage = "Incorrect! Please wait for " + component.state.otherPlayer.name + " to transmit a card.";
+          }
           component.socket.emit('player_has_guessed',component.state.otherPlayer.id);
+        } else {
+          var cardMessage = "";
         }
+        component.setState({cardDrawn:true, cardMessage:cardMessage, drawReady:true, drawCount:drawCount, serverCard:component.getCardName(parseInt(cardNo)), results:results});
       }
     });
 
-    this.socket.on('draw_again', function() {
+    this.socket.on('draw_again', function(result) {
       //Allow the player to draw another card
-      component.setState({playerPickedCard:false, cardDrawn:false});
+      if(result) {
+        var cardMessage = component.state.otherPlayer.name + " guessed Correctly! Please pick another card";
+      } else {
+        var cardMessage = component.state.otherPlayer.name + " guessed Incorrectly! Please pick another card";
+      }
+      component.setState({playerPickedCard:false, cardMessage:cardMessage, cardDrawn:false});
     });
 
     this.socket.on('turn_change', function() {
       //Allow the player to draw another card
-      component.setState({playerPick:false,  cardSelection:component.getCardName(6), turns:1});
+      var cardMessage = "It is now your turn to receive a message from " + component.state.otherPlayer.name;
+      component.setState({playerPick:false, cardMessage:cardMessage,  cardSelection:component.getCardName(6), turns:1});
     });
 
     this.socket.on('finished_game', function(otherPlayer,playerInitiated) {
@@ -206,11 +191,18 @@ class ZenerMain extends Component {
   clickCard(e) {
     if(this.state.cardDrawn && !this.state.guessMade) {
       //Place the card in the middle and then request from the server
+      /*
+      if(this.props.multiPlayer) {
+        var cardMessage = "";
+      } else {
+        var cardMessage = "";
+      }*/
       this.setState({guessMade:true, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
       this.socket.emit('guess_made',e.target.id);
     } else if (this.props.multiPlayer && this.state.playerPick && !this.state.playerPickedCard) {
       //the player who is selecting gets to pick a card
-      this.setState({playerPickedCard:true, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
+      var cardMessage = "Focus on the image try and transmit that image to " + this.state.otherPlayer.name;
+      this.setState({playerPickedCard:true, cardMessage:cardMessage, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
       this.socket.emit('card_drawn',e.target.id,this.state.otherPlayer.id);
     }
   }
@@ -219,6 +211,12 @@ class ZenerMain extends Component {
     e.preventDefault();
     var drawCount = this.state.drawCount;
     drawCount++;
+    /*
+    if(this.props.multiPlayer) {
+      var cardMessage = this.state.otherPlayer.name + " is transmitting the card show turned over, select the image which appears in your head";
+    } else {
+      var cardMessage = "";
+    }*/
     this.setState({drawReady:false, guessMade:false, drawCount: drawCount});
     this.socket.emit('draw_card',this.socket.id);
   }
@@ -240,16 +238,6 @@ class ZenerMain extends Component {
   finish() {
     if(this.props.multiPlayer) {
       //Rules for other player dropping out - decided to kick both off and show message
-      /*
-      if(this.state.turns > 1 && this.state.playerPick) {
-        //Change turn
-        this.setState({cardDrawn:false,playerPick:true, cardSelection:this.getCardName(6)});
-        this.socket.emit('turn_change',this.state.otherPlayer.id);
-      } else {
-        //finish entirely
-        this.socket.emit('multiplayer_finished',this.state.otherPlayer.id);
-      }
-      */
       this.socket.emit('multiplayer_finished',this.state.otherPlayer.id,true);
       this.setState({iDisconnected:true});
     } else {
@@ -268,16 +256,6 @@ class ZenerMain extends Component {
     if(!this.props.multiPlayer) {
       var selectedCard = <Col>{ !this.state.guessMade ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }</Col>;
     } else {
-      console.log("MultiPlayer");
-      console.log(this.state.playerPickedCard);
-      console.log(this.state.guessMade);
-      /*
-      if(!this.state.guessMade && !this.state.playerPickedCard){
-        var selectedCard = <Col><img src={placeholder} className="card"/></Col>;
-      } else {
-        console.log("I am a cat");
-        var selectedCard = <Col><img src={this.state.cardSelection} className="card"/></Col>;
-      }*/
       var selectedCard = <Col>{ !this.state.guessMade && !this.state.playerPickedCard ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }</Col>;
     }
 
@@ -299,9 +277,15 @@ class ZenerMain extends Component {
       var otherPlayerScore = <Col>{otherResults.filter(r => r.result).length}  /  { otherResults.length }</Col>
       var otherPlayerName = <Col>{this.state.otherPlayer.name}</Col>;
     } else {
-      var otherPlayerName = null;
-      var otherPlayerResults = null;
-      var otherPlayerScore = null;
+      var otherPlayerName = <Row><Col></Col></Row>;
+      var otherPlayerResults = <Col></Col>;
+      var otherPlayerScore = <Col></Col>;
+    }
+
+    if(!this.props.multiPlayer) {
+      var drawButton = <Col>{this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>Draw Card</Button> : <Button disabled>Draw Card</Button> }</Col>
+    } else {
+      var drawButton = <Col></Col>
     }
 
     if(this.state.isStart) {
@@ -386,11 +370,14 @@ class ZenerMain extends Component {
     } else {
       return (
           <div className="zenerpanel">
-            <p>App goes here</p>
+            <br/>
             <Row>
-              <Col>
-                {this.state.connected && this.state.drawReady && !this.props.multiPlayer ? <Button onClick={this.drawCard}>{this.state.name} Draw Card</Button> : <Button disabled>{this.state.name} Draw Card</Button> }
-              </Col>
+              <Col md={3}></Col>
+              <Col md={6} className="d-flex align-items-center"><div><h4>{ this.state.name }</h4></div></Col>
+              <Col md={3}></Col>
+            </Row>
+            <Row>
+              {drawButton}
               <Col>
                <Button onClick={this.finish}>Finish</Button>
               </Col>
@@ -407,15 +394,14 @@ class ZenerMain extends Component {
               </Col>
               <Col></Col>
               <Col>
-                { !this.state.multiPlayer ? <img src={back} onClick={this.clickCard} className="card"/> : null}
+                { !this.props.multiPlayer ? <img src={back} className="card"/> : null}
               </Col>
             </Row>
             <Row>
               <Col></Col>
                 {selectedCard}
               <Col>
-                { this.props.multiPlayer && this.state.playerPick ? <p>{ this.state.name } pick a card</p> : null }
-                { this.props.multiPlayer && !this.state.playerPick && this.state.cardDrawn ? <p>{ this.state.name } pick a card</p> : null }
+                { this.props.multiPlayer ? <p>{this.state.cardMessage}</p> : null }
               </Col>
               <Col>
                 { !this.state.cardDrawn ? <img src={placeholder} className="card"/> : <img src={this.state.serverCard} className="card"/> }
