@@ -5,6 +5,7 @@ import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import NumericInput from 'react-numeric-input';
+import WaitCircle from './waitcircle.js';
 //import io from 'http://localhost:8080/socket.io/socket.io.js';
 import socketIOClient from "socket.io-client";
 
@@ -17,6 +18,14 @@ import back from '../assets/back.svg';
 import tick from '../assets/check-circle-regular.svg';
 import mistake from '../assets/times-circle-regular.svg';
 import placeholder from '../assets/placeholder.svg';
+
+//The images below are used to create an animation
+/*
+import brokencircleBl from '../assets/brokencircleBl.svg'
+import brokencircleBl2 from '../assets/brokencircleBl2.svg'
+import brokencircleBl3 from '../assets/brokencircleBl3.svg'
+import brokencircleBl4 from '../assets/brokencircleBl4.svg'
+*/
 
 const ENDPOINT = "http://localhost:8080/";
 
@@ -34,6 +43,7 @@ class ZenerMain extends Component {
     this.state = {
       name: "",
       isStart: true,
+      cardsDisabled: true,
       isFinished: false,
       numberOfCards: 1,
       drawCount: 0,
@@ -44,7 +54,7 @@ class ZenerMain extends Component {
       otherPlayerFound: false,
       playerPickedCard: false,
       playerPick: false,
-      cardMessage: "",
+      cardMessage: "Click draw card to select the first card from the server",
       turns: turns,
       results: []
     }
@@ -79,7 +89,6 @@ class ZenerMain extends Component {
   }
 
   componentDidMount(){
-
   }
 
   initGame() {
@@ -110,9 +119,10 @@ class ZenerMain extends Component {
     this.socket.on('card_drawn', function() {
       if(component.props.multiPlayer) {
         var cardMessage = component.state.otherPlayer.name + " is transmitting the card shown turned over, select the image which appears in your head";
-        component.setState({cardDrawn:true, cardMessage:cardMessage, guessMade:false, serverCard:component.getCardName(0)});
+        component.setState({cardDrawn:true, cardsDisabled:false, cardMessage:cardMessage, guessMade:false, serverCard:component.getCardName(0)});
       } else {
-        component.setState({cardDrawn:true, serverCard:component.getCardName(0)});
+        var cardMessage = "The server has selected a card, try to visualize that image and select a card when ready.";
+        component.setState({cardDrawn:true, cardsDisabled:false, cardMessage:cardMessage, serverCard:component.getCardName(0)});
       }
     });
 
@@ -157,9 +167,13 @@ class ZenerMain extends Component {
           }
           component.socket.emit('player_has_guessed',component.state.otherPlayer.id);
         } else {
-          var cardMessage = "";
+          if(result.result) {
+            var cardMessage = "Correct! Please draw another card";
+          } else {
+            var cardMessage = "Incorrect! Please draw another card";
+          }
         }
-        component.setState({cardDrawn:true, cardMessage:cardMessage, drawReady:true, drawCount:drawCount, serverCard:component.getCardName(parseInt(cardNo)), results:results});
+        component.setState({cardDrawn:true, cardsDisabled:true, cardMessage:cardMessage, drawReady:true, drawCount:drawCount, serverCard:component.getCardName(parseInt(cardNo)), results:results});
       }
     });
 
@@ -266,14 +280,14 @@ class ZenerMain extends Component {
       for(var i=0;i<this.state.otherPlayer.cards.length;i++) {
         otherResults.push({card:this.getCardName(parseInt(this.state.otherPlayer.cards[i])),result:this.state.otherPlayer.results[i]});
       }
-      var otherPlayerResults =  <div className="resultpanel">{ otherResults.map( (result,idx) => (
+      var otherPlayerResults =  <Col><div className="resultpanel">{ otherResults.map( (result,idx) => (
                                   <Row key={idx}>
                                     <Col><img src={result.card}></img></Col>
                                     <Col>
                                       { !result.result ? <img src={mistake} className="iconsmall"></img> : <img src={tick} className="iconsmall"></img>  }
                                     </Col>
                                   </Row>
-                                ))}</div>
+                                ))}</div></Col>
       var otherPlayerScore = <Col>{otherResults.filter(r => r.result).length}  /  { otherResults.length }</Col>
       var otherPlayerName = <Col>{this.state.otherPlayer.name}</Col>;
     } else {
@@ -283,9 +297,9 @@ class ZenerMain extends Component {
     }
 
     if(!this.props.multiPlayer) {
-      var drawButton = <Col>{this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>Draw Card</Button> : <Button disabled>Draw Card</Button> }</Col>
+      var drawButton = <div>{this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>Draw Card</Button> : <Button disabled>Draw Card</Button> }</div>
     } else {
-      var drawButton = <Col></Col>
+      var drawButton = null;
     }
 
     if(this.state.isStart) {
@@ -316,7 +330,7 @@ class ZenerMain extends Component {
       return (
         <Container>
           <Row>
-            <Col>Results:</Col>
+            <Col><h4>Results:</h4></Col>
           </Row>
           <Row>
             <Col>{this.state.name}</Col>
@@ -363,7 +377,18 @@ class ZenerMain extends Component {
       return (
         <Container>
           <Row>
-            <Col>Waiting for other player</Col>
+            <Col></Col>
+            <Col></Col>
+            <h4>Waiting for other player</h4>
+            <Col></Col>
+            <Col></Col>
+          </Row>
+          <Row>
+            <Col></Col>
+            <Col></Col>
+            <Col><WaitCircle runAnim={true} speed={100}/></Col>
+            <Col></Col>
+            <Col></Col>
           </Row>
         </Container>
       );
@@ -372,36 +397,34 @@ class ZenerMain extends Component {
           <div className="zenerpanel">
             <br/>
             <Row>
-              <Col md={3}></Col>
-              <Col md={6} className="d-flex align-items-center"><div><h4>{ this.state.name }</h4></div></Col>
-              <Col md={3}></Col>
+              <Col md={12} className="align-items-center"><div><h4 className="name-text">{ this.state.name }</h4></div></Col>
             </Row>
             <Row>
+              <Col md={3}>
               {drawButton}
-              <Col>
+              <br/>
                <Button onClick={this.finish}>Finish</Button>
               </Col>
-              <Col>
+              <Col md={6}>
                 <div className="resultpanel">{ this.state.results.map( (result,idx) => (
                     <Row key={idx}>
                       <Col><img src={result.card}></img></Col>
                       <Col>
-                        { !result.result ? <img src={mistake}></img> : <img src={tick}></img>  }
+                        { !result.result ? <img src={mistake} className="iconsmall"></img> : <img src={tick} className="iconsmall"></img>  }
                       </Col>
                     </Row>
                   ))}
                 </div>
               </Col>
-              <Col></Col>
-              <Col>
+              <Col md={3}>
                 { !this.props.multiPlayer ? <img src={back} className="card"/> : null}
               </Col>
             </Row>
             <Row>
               <Col></Col>
                 {selectedCard}
-              <Col>
-                { this.props.multiPlayer ? <p>{this.state.cardMessage}</p> : null }
+              <Col className="message-box">
+                <p className="message-text">{this.state.cardMessage}</p>
               </Col>
               <Col>
                 { !this.state.cardDrawn ? <img src={placeholder} className="card"/> : <img src={this.state.serverCard} className="card"/> }
@@ -409,7 +432,7 @@ class ZenerMain extends Component {
               <Col></Col>
             </Row>
             <Row>
-              <Col><img id={1} src={circle} onClick={this.clickCard} className="card"/></Col>
+              <Col>{!this.state.cardsDisabled ? <img id={1} src={circle} onClick={this.clickCard} className="card"/> : <img src={circle} className="card-disabled"/>}</Col>
               <Col><img id={2} src={square} onClick={this.clickCard} className="card"/></Col>
               <Col><img id={3} src={waves} onClick={this.clickCard} className="card"/></Col>
               <Col><img id={4} src={cross} onClick={this.clickCard} className="card"/></Col>

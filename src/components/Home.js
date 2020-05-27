@@ -4,6 +4,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
+import WaitCircle from './waitcircle.js';
 
 class Home extends Component {
 
@@ -43,6 +44,7 @@ class Home extends Component {
         <Row>
           <Col>
             <p>Home page goes here</p>
+
             <Button onClick={this.handlePlayComputer}>Play against computer</Button>
             <Button onClick={this.handlePlayHuman}>Play against human</Button>
             <br/>

@@ -230,6 +230,7 @@ div#catdiv {
   background-color: #017a07;
   width: 800px;
   height:600px;
+  padding-left: 10px;
 }
 
 .card {
@@ -238,8 +239,15 @@ div#catdiv {
   height:175px;
 }
 
+.card-disabled {
+  background-color: #017a07;
+  width:108px;
+  height:175px;
+  opacity: 0.5;
+}
+
 .resultpanel {
-  overflow:scroll;
+  overflow:auto;
   overflow-x:hidden;
   height:170px;
 }
@@ -249,34 +257,56 @@ div#catdiv {
   height:20px;
 }
 
+.message-text {
+  color: #cf6604;
+}
+
+.message-box {
+  border-radius: 25px;
+  border-width: 2px;
+  border-color: black;
+  border-style: solid;
+  background-color: #5ef75c;
+  margin: 5px;
+  padding: 5px;
+}
+
+.name-text {
+  color: #cf6604;
+  text-align: center;
+  border-radius: 25px;
+  border-width: 2px;
+  border-color: black;
+  border-style: solid;
+  background-color: #5ef75c;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
 .wait-anim {
-  background-color: orangered;
+  width:200px;
+  height:200px;
+}
+
+/*
+DOESENT WORK
+.wait-anim {
   height: 90px;
   width: 90px;
-
-  left: 0px;
-  top: 0px;
-
-  position: absolute;
-
-  animation: sampleanimation 1s infinite;
+  background-image: url("/static/media/brokencircleBl.499a011e.svg");
 }
 
-@keyframes sampleanimation {
+@keyframes waiting {
   0% {
-    left: 0px;
-    top: 0px;
+    background-image: url("/static/media/brokencircleBl.499a011e.svg");
   }
   25% {
-    left: 300px;
-    top: 0px;
+    background-image: url("./assets/brokencircleBl2.svg");
   }
   50% {
-    left: 300px;
-    top: 150px;
+    background-image: url("./assets/brokencircleBl3.svg");
   }
   75% {
-    left: 0px;
-    top: 150px;
+    background-image: url("./assets/brokencircleBl4.svg");
   }
-}
+}*/
