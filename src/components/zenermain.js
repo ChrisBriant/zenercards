@@ -106,10 +106,12 @@ class ZenerMain extends Component {
       component.setState({playerPick:drawReady, connected:true, otherPlayer:otherPlayer,otherPlayerFound:true});
       if(component.state.playerPick) {
         var cardMessage = "Choose a card, try and transmit that image to " + component.state.otherPlayer.name;
+        var cardsDisabled = false;
       } else {
         var cardMessage = "Please wait for " + component.state.otherPlayer.name + " to select a card";
+        var cardsDisabled = true;
       }
-      component.setState({cardMessage:cardMessage});
+      component.setState({cardMessage:cardMessage, cardsDisabled:cardsDisabled});
       if(!drawReady) {
         //Signal to the server to start the other player
         this.emit('other_player_start',otherPlayer.id);
@@ -184,13 +186,13 @@ class ZenerMain extends Component {
       } else {
         var cardMessage = component.state.otherPlayer.name + " guessed Incorrectly! Please pick another card";
       }
-      component.setState({playerPickedCard:false, cardMessage:cardMessage, cardDrawn:false});
+      component.setState({playerPickedCard:false, cardsDisabled:false, cardMessage:cardMessage, cardDrawn:false});
     });
 
     this.socket.on('turn_change', function() {
       //Allow the player to draw another card
-      var cardMessage = "It is now your turn to receive a message from " + component.state.otherPlayer.name;
-      component.setState({playerPick:false, cardMessage:cardMessage,  cardSelection:component.getCardName(6), turns:1});
+      var cardMessage = "It is now your turn to receive an image from " + component.state.otherPlayer.name;
+      component.setState({playerPick:false, cardsDisabled:true, cardMessage:cardMessage,  cardSelection:component.getCardName(6), turns:1});
     });
 
     this.socket.on('finished_game', function(otherPlayer,playerInitiated) {
@@ -205,18 +207,12 @@ class ZenerMain extends Component {
   clickCard(e) {
     if(this.state.cardDrawn && !this.state.guessMade) {
       //Place the card in the middle and then request from the server
-      /*
-      if(this.props.multiPlayer) {
-        var cardMessage = "";
-      } else {
-        var cardMessage = "";
-      }*/
       this.setState({guessMade:true, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
       this.socket.emit('guess_made',e.target.id);
     } else if (this.props.multiPlayer && this.state.playerPick && !this.state.playerPickedCard) {
       //the player who is selecting gets to pick a card
       var cardMessage = "Focus on the image try and transmit that image to " + this.state.otherPlayer.name;
-      this.setState({playerPickedCard:true, cardMessage:cardMessage, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
+      this.setState({playerPickedCard:true, cardsDisabled:true, cardMessage:cardMessage, cardSelection:this.getCardName(parseInt(e.target.id)), selectedCardNo:parseInt(e.target.id)});
       this.socket.emit('card_drawn',e.target.id,this.state.otherPlayer.id);
     }
   }
@@ -225,12 +221,6 @@ class ZenerMain extends Component {
     e.preventDefault();
     var drawCount = this.state.drawCount;
     drawCount++;
-    /*
-    if(this.props.multiPlayer) {
-      var cardMessage = this.state.otherPlayer.name + " is transmitting the card show turned over, select the image which appears in your head";
-    } else {
-      var cardMessage = "";
-    }*/
     this.setState({drawReady:false, guessMade:false, drawCount: drawCount});
     this.socket.emit('draw_card',this.socket.id);
   }
@@ -433,10 +423,10 @@ class ZenerMain extends Component {
             </Row>
             <Row>
               <Col>{!this.state.cardsDisabled ? <img id={1} src={circle} onClick={this.clickCard} className="card"/> : <img src={circle} className="card-disabled"/>}</Col>
-              <Col><img id={2} src={square} onClick={this.clickCard} className="card"/></Col>
-              <Col><img id={3} src={waves} onClick={this.clickCard} className="card"/></Col>
-              <Col><img id={4} src={cross} onClick={this.clickCard} className="card"/></Col>
-              <Col><img id={5} src={star} onClick={this.clickCard} className="card"/></Col>
+              <Col>{!this.state.cardsDisabled ? <img id={2} src={square} onClick={this.clickCard} className="card"/> : <img src={square} className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={3} src={waves} onClick={this.clickCard} className="card"/>  : <img src={waves} className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={4} src={cross} onClick={this.clickCard} className="card"/> : <img src={cross} className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={5} src={star} onClick={this.clickCard} className="card"/> : <img src={star} className="card-disabled"/>}</Col>
             </Row>
           </div>
       );

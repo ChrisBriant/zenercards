@@ -49,7 +49,7 @@ class Main extends Component {
                 <br/>
                 <Row>
                   <Col md={2}></Col>
-                  <Col><h1 className="titletext">Welcome</h1></Col>
+                  <Col><h1 className="titletext">Zener ESP Test</h1></Col>
                   <Col md={2}></Col>
                 </Row>
                 <br/><br/>

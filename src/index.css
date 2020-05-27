@@ -239,6 +239,11 @@ div#catdiv {
   height:175px;
 }
 
+.card-md {
+  width:54px;
+  height:87px;
+}
+
 .card-disabled {
   background-color: #017a07;
   width:108px;
