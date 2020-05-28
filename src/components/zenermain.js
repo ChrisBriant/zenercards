@@ -56,6 +56,7 @@ class ZenerMain extends Component {
       playerPick: false,
       cardMessage: "Click draw card to select the first card from the server",
       turns: turns,
+      otherPlayerVerdict:null,
       results: []
     }
     this.clickCard = this.clickCard.bind(this);
@@ -67,6 +68,7 @@ class ZenerMain extends Component {
     this.initGame = this.initGame.bind(this);
     this.finish = this.finish.bind(this);
     this.getCardName = this.getCardName.bind(this);
+    this.getVerdict = this.getVerdict.bind(this);
   }
 
 
@@ -149,7 +151,8 @@ class ZenerMain extends Component {
           } else {
             //Exit
             component.socket.disconnect();
-            component.setState({isFinished:true, serverCard:component.getCardName(parseInt(cardNo)), results:results});
+            var verdict = component.getVerdict(component.state.results.filter(r => r.result).length, component.state.results.length,true);
+            component.setState({isFinished:true, serverCard:component.getCardName(parseInt(cardNo)), results:results,verdict:verdict});
           }
         } else {
           //var turns = component.state.turns;
@@ -198,7 +201,13 @@ class ZenerMain extends Component {
     this.socket.on('finished_game', function(otherPlayer,playerInitiated) {
       //Allow the player to draw another card
       component.socket.disconnect();
-      component.setState({otherPlayer:otherPlayer,isFinished:true,playerDisconnect:playerInitiated});
+      var verdict = component.getVerdict(component.state.results.filter(r => r.result).length, component.state.results.length,true);
+      var otherResults = [];
+      for(var i=0;i<otherPlayer.cards.length;i++) {
+        otherResults.push({card:component.getCardName(parseInt(otherPlayer.cards[i])),result:otherPlayer.results[i]});
+      }
+      var otherPlayerVerdict = component.getVerdict(otherResults.filter(r => r.result).length,otherResults.length,false);
+      component.setState({otherPlayer:otherPlayer,isFinished:true,playerDisconnect:playerInitiated,verdict:verdict,otherPlayerVerdict:otherPlayerVerdict,otherResults:otherResults});
     });
   }
 
@@ -246,12 +255,31 @@ class ZenerMain extends Component {
       this.setState({iDisconnected:true});
     } else {
       this.socket.disconnect();
-      this.setState({isFinished:true});
+      var verdict = this.getVerdict(this.state.results.filter(r => r.result).length, this.state.results.length,true);
+      this.setState({isFinished:true,verdict:verdict});
     }
   }
 
   goToHome() {
     this.props.history.push('/')
+  }
+
+  getVerdict(totalCorrect,total,isMe) {
+    var percentScore = (totalCorrect / total) * 100;
+    if(isMe) {
+      var person = "you have";
+    } else {
+      var person = this.state.otherPlayer.name + " has";
+    }
+    if(percentScore < 28) {
+      return <p>{percentScore}%, this is within normal ranges, it is unlikely {person} ESP.</p>;
+    } else if (percentScore > 28 && percentScore < 60) {
+      return <p>{percentScore}%, this is much less probable, it indicates the possibility {person} ESP.</p>;
+    } else if (percentScore > 60 && percentScore < 80) {
+      return <p>{percentScore}%, this is a strong indicator that {person} ESP.</p>;
+    } else if (percentScore > 80) {
+      return <p>{percentScore}%, this score is extremely unlikely to happen by chance, almost certainly, {person} ESP.</p>;
+    }
   }
 
 
@@ -280,10 +308,17 @@ class ZenerMain extends Component {
                                 ))}</div></Col>
       var otherPlayerScore = <Col>{otherResults.filter(r => r.result).length}  /  { otherResults.length }</Col>
       var otherPlayerName = <Col>{this.state.otherPlayer.name}</Col>;
+      //var otherPlayerVerdict = this.getVerdict(otherResults.filter(r => r.result).length,otherResults.length,false);
     } else {
       var otherPlayerName = <Row><Col></Col></Row>;
       var otherPlayerResults = <Col></Col>;
       var otherPlayerScore = <Col></Col>;
+      //var otherPlayerVerdict = <p></p>;
+    }
+
+    if(this.state.isFinished) {
+      console.log(this.state);
+      //var verdict = this.getVerdict(this.state.results.filter(r => r.result).length, this.state.results.length,true);
     }
 
     if(!this.props.multiPlayer) {
@@ -341,9 +376,13 @@ class ZenerMain extends Component {
               </div>
             </Col>
           </Row>
+          <br/>
+          <Row><Col>{ this.state.verdict }</Col></Row>
           <Row>{ otherPlayerName }</Row>
           <Row>{ otherPlayerScore }</Row>
           <Row>{ otherPlayerResults }</Row>
+          <br/>
+          <Row><Col>{ this.state.otherPlayerVerdict }</Col></Row>
           <Row>
             <Col><Button onClick={this.goToHome}>Exit</Button></Col>
           </Row>
@@ -393,7 +432,7 @@ class ZenerMain extends Component {
               <Col md={3}>
               {drawButton}
               <br/>
-               <Button onClick={this.finish}>Finish</Button>
+               <Button variant="outline-warning" onClick={this.finish}>Finish</Button>
               </Col>
               <Col md={6}>
                 <div className="resultpanel">{ this.state.results.map( (result,idx) => (
