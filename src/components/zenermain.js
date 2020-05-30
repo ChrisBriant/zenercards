@@ -6,7 +6,7 @@ import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import NumericInput from 'react-numeric-input';
 import WaitCircle from './waitcircle.js';
-//import io from 'http://localhost:8080/socket.io/socket.io.js';
+import { animateScroll } from "react-scroll";
 import socketIOClient from "socket.io-client";
 
 import circle from '../assets/circle.svg';
@@ -17,24 +17,15 @@ import star from '../assets/star.svg';
 import back from '../assets/back.svg';
 import tick from '../assets/check-circle-regular.svg';
 import mistake from '../assets/times-circle-regular.svg';
+import exit from '../assets/door-open-solid-wh.svg';
 import placeholder from '../assets/placeholder.svg';
 
-//The images below are used to create an animation
-/*
-import brokencircleBl from '../assets/brokencircleBl.svg'
-import brokencircleBl2 from '../assets/brokencircleBl2.svg'
-import brokencircleBl3 from '../assets/brokencircleBl3.svg'
-import brokencircleBl4 from '../assets/brokencircleBl4.svg'
-*/
-
-const ENDPOINT = "http://localhost:8080/";
+const ENDPOINT = "https://zener-card-server.herokuapp.com/";
 
 class ZenerMain extends Component {
 
   constructor(props) {
     super(props);
-    console.log("props");
-    console.log(this.props);
     if(this.props.multiPlayer) {
       var turns = 2;
     } else {
@@ -45,7 +36,7 @@ class ZenerMain extends Component {
       isStart: true,
       cardsDisabled: true,
       isFinished: false,
-      numberOfCards: 1,
+      numberOfCards: 25,
       drawCount: 0,
       connected: false,
       cardDrawn: false,
@@ -69,6 +60,7 @@ class ZenerMain extends Component {
     this.finish = this.finish.bind(this);
     this.getCardName = this.getCardName.bind(this);
     this.getVerdict = this.getVerdict.bind(this);
+    this.scrollToBottom = this.scrollToBottom.bind(this);
   }
 
 
@@ -91,6 +83,16 @@ class ZenerMain extends Component {
   }
 
   componentDidMount(){
+  }
+
+  componentDidUpdate() {
+    this.scrollToBottom();
+  }
+
+  scrollToBottom() {
+    animateScroll.scrollToBottom({
+      containerId: "resultpanel"
+    });
   }
 
   initGame() {
@@ -156,7 +158,6 @@ class ZenerMain extends Component {
           }
         } else {
           //var turns = component.state.turns;
-          //turns--;
           //Tell the server to change player and change state
           var cardMessage = "Please pick a card is now " + component.state.otherPlayer.name + "'s turn to receive";
           component.setState({cardDrawn:false,playerPick:true, cardMessage:cardMessage, serverCard:component.getCardName(parseInt(cardNo)), cardSelection:component.getCardName(6), results:results});
@@ -284,11 +285,10 @@ class ZenerMain extends Component {
 
 
   render() {
-    console.log(this.state.cardSelection);
     if(!this.props.multiPlayer) {
-      var selectedCard = <Col>{ !this.state.guessMade ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }</Col>;
+      var selectedCard = <Col>{ !this.state.guessMade ? <img src={placeholder} alt="placeholder" className="card"/> : <img src={this.state.cardSelection} alt="placeholder" className="card"/> }</Col>;
     } else {
-      var selectedCard = <Col>{ !this.state.guessMade && !this.state.playerPickedCard ? <img src={placeholder} className="card"/> : <img src={this.state.cardSelection} className="card"/> }</Col>;
+      var selectedCard = <Col>{ !this.state.guessMade && !this.state.playerPickedCard ? <img src={placeholder} alt="placeholder" className="card"/> : <img src={this.state.cardSelection}  alt="placeholder" className="card"/> }</Col>;
     }
 
     if(this.state.isFinished && this.props.multiPlayer && !this.state.playerDisconnect) {
@@ -300,29 +300,22 @@ class ZenerMain extends Component {
       }
       var otherPlayerResults =  <Col><div className="resultpanel">{ otherResults.map( (result,idx) => (
                                   <Row key={idx}>
-                                    <Col><img src={result.card}></img></Col>
+                                    <Col><img alt="card" src={result.card}></img></Col>
                                     <Col>
-                                      { !result.result ? <img src={mistake} className="iconsmall"></img> : <img src={tick} className="iconsmall"></img>  }
+                                      { !result.result ? <img src={mistake} alt="cross" className="iconsmall"></img> : <img src={tick} alt="tick" className="iconsmall"></img>  }
                                     </Col>
                                   </Row>
                                 ))}</div></Col>
       var otherPlayerScore = <Col>{otherResults.filter(r => r.result).length}  /  { otherResults.length }</Col>
       var otherPlayerName = <Col>{this.state.otherPlayer.name}</Col>;
-      //var otherPlayerVerdict = this.getVerdict(otherResults.filter(r => r.result).length,otherResults.length,false);
     } else {
       var otherPlayerName = <Row><Col></Col></Row>;
       var otherPlayerResults = <Col></Col>;
       var otherPlayerScore = <Col></Col>;
-      //var otherPlayerVerdict = <p></p>;
-    }
-
-    if(this.state.isFinished) {
-      console.log(this.state);
-      //var verdict = this.getVerdict(this.state.results.filter(r => r.result).length, this.state.results.length,true);
     }
 
     if(!this.props.multiPlayer) {
-      var drawButton = <div>{this.state.connected && this.state.drawReady ? <Button onClick={this.drawCard}>Draw Card</Button> : <Button disabled>Draw Card</Button> }</div>
+      var drawButton = <div>{this.state.connected && this.state.drawReady ? <Button variant="outline-warning" onClick={this.drawCard}>Draw Card</Button> : <Button variant="outline-warning" disabled>Draw Card</Button> }</div>
     } else {
       var drawButton = null;
     }
@@ -337,17 +330,23 @@ class ZenerMain extends Component {
             <Col>
               <input value={this.state.name} className="form-control" onChange={this.handleChangeName}/>
             </Col>
+          </Row><br/>
+          <Row>
+            <Col md={6}>
+              <label>Select number of tries:</label>
+            </Col>
+            <Col md={3}>
+              <NumericInput min={1} max={100} value={this.state.numberOfCards} onChange={this.handleChangeCardCount}/>
+            </Col>
+            <Col md={3}></Col>
           </Row>
           <Row>
-            <Col>
-              <label>Select number of guesses</label>
-            </Col>
-            <Col>
-              <NumericInput min={1} max={100} value={this.state.numberOfCards} className="form-control" onChange={this.handleChangeCardCount}/>
-            </Col>
+            <Col></Col>
+            <Col><p>25 is the recommended value, for the most accurate results, but you can change this to any number between 1 an 100</p></Col>
           </Row>
           <Row>
-            <Col><Button onClick={this.handleStart}>START</Button></Col>
+            <Col md={2}><Button onClick={this.handleStart}>START</Button></Col>
+            <Col md={2}><Button onClick={this.goToHome}><img src={exit} alt="exit" className="iconsmall"></img> Exit</Button></Col>
           </Row>
         </Container>
       );
@@ -367,9 +366,9 @@ class ZenerMain extends Component {
             <Col>
               <div className="resultpanel">{ this.state.results.map( (result,idx) => (
                   <Row key={idx}>
-                    <Col><img src={result.card}></img></Col>
+                    <Col><img alt="card" src={result.card}></img></Col>
                     <Col>
-                      { !result.result ? <img src={mistake} className="iconsmall"></img> : <img src={tick} className="iconsmall"></img>  }
+                      { !result.result ? <img src={mistake} alt="cross" className="iconsmall"></img> : <img src={tick} alt="tick" className="iconsmall"></img>  }
                     </Col>
                   </Row>
                 ))}
@@ -384,7 +383,7 @@ class ZenerMain extends Component {
           <br/>
           <Row><Col>{ this.state.otherPlayerVerdict }</Col></Row>
           <Row>
-            <Col><Button onClick={this.goToHome}>Exit</Button></Col>
+            <Col><Button onClick={this.goToHome}><img src={exit} alt="exit" className="iconsmall"></img> Exit</Button></Col>
           </Row>
         </Container>
       );
@@ -398,7 +397,7 @@ class ZenerMain extends Component {
             </Col>
           </Row>
           <Row>
-            <Col><Button onClick={this.goToHome}>Exit</Button></Col>
+            <Col><Button onClick={this.goToHome}><img src={exit} alt="exit" className="iconsmall"/> Exit</Button></Col>
           </Row>
         </Container>
       );
@@ -435,18 +434,18 @@ class ZenerMain extends Component {
                <Button variant="outline-warning" onClick={this.finish}>Finish</Button>
               </Col>
               <Col md={6}>
-                <div className="resultpanel">{ this.state.results.map( (result,idx) => (
+                <div id="resultpanel" className="resultpanel">{ this.state.results.map( (result,idx) => (
                     <Row key={idx}>
-                      <Col><img src={result.card}></img></Col>
+                      <Col><img src={result.card} alt="result"></img></Col>
                       <Col>
-                        { !result.result ? <img src={mistake} className="iconsmall"></img> : <img src={tick} className="iconsmall"></img>  }
+                        { !result.result ? <img src={mistake} alt="cross" className="iconsmall"></img> : <img src={tick} alt="tick" className="iconsmall"></img>  }
                       </Col>
                     </Row>
                   ))}
                 </div>
               </Col>
               <Col md={3}>
-                { !this.props.multiPlayer ? <img src={back} className="card"/> : null}
+                { !this.props.multiPlayer ? <img src={back} alt="back" className="card"/> : null}
               </Col>
             </Row>
             <Row>
@@ -456,16 +455,16 @@ class ZenerMain extends Component {
                 <p className="message-text">{this.state.cardMessage}</p>
               </Col>
               <Col>
-                { !this.state.cardDrawn ? <img src={placeholder} className="card"/> : <img src={this.state.serverCard} className="card"/> }
+                { !this.state.cardDrawn ? <img src={placeholder} alt="placeholder" className="card"/> : <img src={this.state.serverCard} alt="placeholder" className="card"/> }
               </Col>
               <Col></Col>
             </Row>
             <Row>
-              <Col>{!this.state.cardsDisabled ? <img id={1} src={circle} onClick={this.clickCard} className="card"/> : <img src={circle} className="card-disabled"/>}</Col>
-              <Col>{!this.state.cardsDisabled ? <img id={2} src={square} onClick={this.clickCard} className="card"/> : <img src={square} className="card-disabled"/>}</Col>
-              <Col>{!this.state.cardsDisabled ? <img id={3} src={waves} onClick={this.clickCard} className="card"/>  : <img src={waves} className="card-disabled"/>}</Col>
-              <Col>{!this.state.cardsDisabled ? <img id={4} src={cross} onClick={this.clickCard} className="card"/> : <img src={cross} className="card-disabled"/>}</Col>
-              <Col>{!this.state.cardsDisabled ? <img id={5} src={star} onClick={this.clickCard} className="card"/> : <img src={star} className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={1} alt="circle" src={circle} onClick={this.clickCard} className="card"/> : <img src={circle} alt="circle" className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={2} alt="square" src={square} onClick={this.clickCard} className="card"/> : <img src={square} alt="square" className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={3} alt="waves" src={waves} onClick={this.clickCard} className="card"/>  : <img src={waves} alt="waves" className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={4} alt="cross" src={cross} onClick={this.clickCard} className="card"/> : <img src={cross} alt="cross" className="card-disabled"/>}</Col>
+              <Col>{!this.state.cardsDisabled ? <img id={5} alt="star" src={star} onClick={this.clickCard} className="card"/> : <img src={star} alt="star" className="card-disabled"/>}</Col>
             </Row>
           </div>
       );

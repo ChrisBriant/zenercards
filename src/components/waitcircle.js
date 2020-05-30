@@ -33,7 +33,7 @@ class WaitCircle extends Component {
     var anim = [circle1,circle2,circle3,circle4,circle5,circle6,circle7,circle8,circle9,circle10,circle11,circle12,circle13,circle14,circle15,circle16,circle17,circle18];
     var frame = 0;
     var component = this;
-    setInterval(function() {
+    this.timer = setInterval(function() {
       if(component.props.runAnim) {
         component.setState({animFrame:anim[frame]});
       }
@@ -45,11 +45,14 @@ class WaitCircle extends Component {
     }, component.props.speed);
   }
 
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
 
   render() {
     return (
       <div>
-        <img className="wait-anim" src={this.state.animFrame}/>
+        <img className="wait-anim" alt="waiting" src={this.state.animFrame}/>
       </div>
     );
   }

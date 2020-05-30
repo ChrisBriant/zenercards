@@ -50,16 +50,16 @@ class Home extends Component {
           <Col>
             <p><strong>&quot;Extrasensory perception</strong> or <strong>ESP</strong>, also called <strong>sixth sense</strong>,
             includes claimed reception of information not gained through the recognized physical senses, but sensed with the mind.&quot;</p>
-            <p>-Definition from <a href="https://en.wikipedia.org/wiki/Extrasensory_perception">Wikipedia</a></p>
+            <p className="citation">-Definition from <a href="https://en.wikipedia.org/wiki/Extrasensory_perception">Wikipedia</a></p>
             <p>This app is designed as a psychological experiment to test the existance of ESP using Zener cards.
             Zener cards have five symbols, shown below.</p>
             <Row>
             <Col md={3}></Col>
-            <Col><img src={circle} className="card-md"/></Col>
-            <Col><img src={square} className="card-md"/></Col>
-            <Col><img src={waves} className="card-md"/></Col>
-            <Col><img src={cross} className="card-md"/></Col>
-            <Col><img src={star} className="card-md"/></Col>
+            <Col><img src={circle} alt="circle" className="card-md"/></Col>
+            <Col><img src={square} alt="square" className="card-md"/></Col>
+            <Col><img src={waves} alt="waves" className="card-md"/></Col>
+            <Col><img src={cross} alt="cross" className="card-md"/></Col>
+            <Col><img src={star} alt="star" className="card-md"/></Col>
             <Col md={3}></Col>
             </Row>
             <p>To take part, you can either play against a compter or a human.</p>
@@ -88,7 +88,7 @@ class Home extends Component {
              this means you are either incredibly lucky or psychic!</p>
              <strong>80% and Above</strong>
              <p>The chances are about one in five billion, you almost certainly have ESP.</p>
-             <p>-Taken from the Wikipedia article</p>
+             <p className="citation">-Taken from the Wikipedia article</p>
             <br/>
           </Col>
         </Row>
