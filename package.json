@@ -12,7 +12,7 @@
     "react-dnd-html5-backend": "^3.0.2",
     "react-dom": "^16.8.6",
     "react-images-upload": "^1.2.7",
-    "react-native": "^0.60.4",
+    "react-native": "^0.62.3",
     "react-numeric-input": "^2.2.3",
     "react-ratings-declarative": "^3.4.1",
     "react-router-dom": "^5.0.0",
